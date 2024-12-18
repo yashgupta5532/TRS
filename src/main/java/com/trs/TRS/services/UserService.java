@@ -1,25 +1,59 @@
 package com.trs.TRS.services;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.trs.TRS.models.User;
 import com.trs.TRS.repositories.UserRepository;
+import com.trs.TRS.utils.JwtUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor // make the dependency injection as final with all the arguments
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    public ResponseEntity<?> signup(User user) {
+        User existedUser = userRepository.findByUsername(user.getUsername());
+        Map<String, Object> response = new HashMap<>();
+        if (existedUser != null) {
+            return ResponseEntity.badRequest().body("Username already exists");
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User createdUser = userRepository.save(user);
+        response.put("user", createdUser);
+        response.put("message", "User Registered Successfully");
+        return ResponseEntity.ok(response);
+
     }
 
-    public User signup(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public ResponseEntity<?> login(String input,String password){
+        User existingUser = findByUsernameOrEmail(input);
+        Map<String, Object> response = new HashMap<>();
+
+        if (existingUser == null) {
+            response.put("message", "");
+            return ResponseEntity.badRequest().body("SignUp first! We could not find your account");
+        }
+
+        boolean isPasswordMatch = checkPassword(password, existingUser.getPassword());
+        if (isPasswordMatch) {
+            String token = jwtUtil.generateToken(existingUser.getUsername());
+            response.put("token", token);
+            response.put("user", existingUser);
+            response.put("message", existingUser.getUsername() + " Logged In Successfully");
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(403).body("Invalid Password");
+        }
     }
 
     public boolean checkPassword(String rawPassword, String encodedPassword) {

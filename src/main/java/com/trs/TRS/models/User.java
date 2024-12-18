@@ -1,41 +1,36 @@
 package com.trs.TRS.models;
 
-import org.hibernate.validator.constraints.UniqueElements;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.trs.TRS.constants.enums.UserRole;
+
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Entity
-@AllArgsConstructor
+@Data // generates getters,setters,toString()
 @NoArgsConstructor
-@Getter
-@Setter
-@Builder
+@AllArgsConstructor
+@Document(collection = "users") //
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private String id; // this id references the mongodb's _id
 
-    @NotEmpty
-    // @UniqueElements
+    @NotBlank(message = "Username is Required")
     private String username;
 
     @Email
-    @NotEmpty
-    // @UniqueElements
+    @NotBlank(message = "Email is Required")
     private String email;
 
-    @NotEmpty
+    @NotBlank(message = "userType is Required")
+    private UserRole userType;
+
+    @NotBlank(message = "Password is Required")
     private String password;
 
     private String avatar;
